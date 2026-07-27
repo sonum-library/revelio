@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#EDE7F6" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Revelio" />
+<title>Revelio, a tarot reading companion</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Jim+Nightshade&family=Pinyon+Script&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --mist:#F7F4FB;
+    --dawn:#FBF0F3;
+    --sky:#EEF2FB;
+    --periwinkle:#C9C3E8;
+    --lilac:#8E82BE;
+    --lilac-deep:#6E62A0;
+    --ink:#443C5C;
+    --ink-soft:#7A7291;
+    --gold:#C7A66B;
+    --gold-soft:#E7D6AD;
+    --card:#FFFFFF;
+    --line:rgba(142,130,190,0.18);
+    --shadow:0 18px 40px -22px rgba(110,98,160,0.45);
+    --radius:18px;
+    --font-display:"Pinyon Script", cursive;
+    --font-head:"Jim Nightshade", cursive;
+    --font-body:"Cormorant", Georgia, serif;
+    --wordmark-size:64px;
+    --wordmark-spacing:0.01em;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font-body);
+    font-size:18px;
+    font-weight:600;
+    color:var(--ink);
+    background:
+      radial-gradient(120% 90% at 15% 0%, var(--dawn) 0%, transparent 55%),
+      radial-gradient(120% 90% at 90% 10%, var(--sky) 0%, transparent 50%),
+      linear-gradient(180deg, var(--mist) 0%, #F3EFF8 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:0 20px 96px;}
+
+  header{padding:34px 0 8px;text-align:center;}
+  .wordmark{
+    font-family:var(--font-display);
+    font-weight:500;
+    font-size:var(--wordmark-size);
+    letter-spacing:var(--wordmark-spacing);
+    color:var(--lilac-deep);
+    margin:0;line-height:1.1;
+    text-transform:lowercase;
+  }
+  .wordmark .glyph{color:var(--gold);font-weight:400;}
+  .tagline{
+    font-size:17px;letter-spacing:0.06em;font-style:italic;
+    color:var(--ink-soft);margin-top:6px;font-weight:500;font-family:var(--font-body);
+  }
+
+  nav{display:flex;justify-content:center;gap:6px;margin:22px 0 30px;font-family:var(--font-body);}
+  .tab{
+    appearance:none;border:none;background:transparent;cursor:pointer;
+    font-family:var(--font-body);font-size:17px;font-weight:700;letter-spacing:0.04em;
+    color:var(--ink-soft);padding:9px 16px;border-radius:999px;transition:all .25s ease;
+  }
+  .tab[aria-selected="true"]{color:var(--lilac-deep);background:rgba(255,255,255,0.75);box-shadow:var(--shadow);}
+  .tab:focus-visible{outline:2px solid var(--lilac);outline-offset:2px;}
+
+  section[hidden]{display:none;}
+  [hidden]{display:none !important;}
+
+  .eyebrow{font-size:11px;letter-spacing:0.28em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px;font-family:var(--font-body);}
+  h2.step{font-family:var(--font-head);font-weight:400;font-size:33px;color:var(--lilac-deep);margin:0 0 6px;line-height:1.12;}
+  .hint{font-size:15px;color:var(--ink-soft);margin:0 0 16px;}
+  .panel{background:rgba(255,255,255,0.62);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:20px;backdrop-filter:blur(6px);}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    appearance:none;border:1px solid var(--line);background:rgba(255,255,255,0.5);
+    font-family:var(--font-body);font-size:15px;font-weight:700;color:var(--ink);
+    padding:9px 15px;border-radius:999px;cursor:pointer;transition:all .2s ease;
+  }
+  .chip:hover{border-color:var(--periwinkle);}
+  .chip[aria-pressed="true"]{background:var(--lilac);border-color:var(--lilac);color:#fff;box-shadow:0 8px 18px -10px var(--lilac);}
+  .chip:focus-visible{outline:2px solid var(--lilac);outline-offset:2px;}
+
+  .modetoggle{display:flex;gap:8px;}
+  .modetoggle .chip{flex:1;text-align:center;padding:12px;}
+
+  label.field{display:block;font-size:16px;font-style:italic;color:var(--ink-soft);font-weight:600;margin-bottom:8px;font-family:var(--font-body);}
+  input[type="text"],select,textarea{
+    width:100%;font-family:var(--font-body);font-size:17px;font-weight:600;color:var(--ink);
+    background:rgba(255,255,255,0.85);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;transition:border-color .2s ease;
+  }
+  input[type="text"]:focus,select:focus,textarea:focus{outline:none;border-color:var(--lilac);}
+
+  .cardline{border:1px solid var(--line);border-radius:14px;padding:12px;background:rgba(255,255,255,0.45);margin-bottom:10px;}
+  .cardline .cltop{font-size:14px;font-style:italic;color:var(--ink-soft);font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+  .cardpick{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .cardpick select{flex:1;min-width:170px;}
+  .orient{
+    appearance:none;border:1px solid var(--line);background:rgba(255,255,255,0.7);
+    font-family:var(--font-body);font-size:14px;font-weight:700;letter-spacing:0.06em;color:var(--ink-soft);
+    padding:11px 14px;border-radius:12px;cursor:pointer;white-space:nowrap;transition:all .2s ease;
+  }
+  .orient[data-reversed="true"]{background:var(--gold-soft);border-color:var(--gold);color:#7a5c1f;}
+  .orient:focus-visible{outline:2px solid var(--lilac);outline-offset:2px;}
+  .removecard{appearance:none;border:none;background:none;color:var(--ink-soft);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;}
+  .removecard:hover{color:#b26a8d;}
+
+  .plabel{font-family:var(--font-body);font-size:18px;color:var(--lilac-deep);font-weight:600;margin-bottom:2px;}
+  .prole{font-size:14px;color:var(--ink-soft);display:block;margin-bottom:10px;}
+
+  .addcard{appearance:none;border:1px dashed var(--periwinkle);background:transparent;color:var(--lilac-deep);font-family:var(--font-body);font-weight:700;font-size:15px;padding:11px;border-radius:12px;cursor:pointer;width:100%;transition:all .2s ease;}
+  .addcard:hover{background:rgba(201,195,232,0.15);}
+  .fellcount{font-size:14px;color:var(--ink-soft);text-align:center;margin-top:10px;font-weight:600;letter-spacing:0.08em;}
+
+  .btn{appearance:none;border:none;cursor:pointer;font-family:var(--font-body);font-weight:700;letter-spacing:0.04em;border-radius:999px;transition:transform .15s ease,box-shadow .2s ease;}
+  .btn-primary{background:linear-gradient(135deg,var(--lilac) 0%,var(--lilac-deep) 100%);color:#fff;font-size:17px;padding:15px 30px;box-shadow:0 14px 28px -14px var(--lilac-deep);width:100%;}
+  .btn-primary:hover{transform:translateY(-1px);}
+  .btn-ghost{background:rgba(255,255,255,0.7);border:1px solid var(--line);color:var(--lilac-deep);font-size:15px;padding:10px 18px;}
+  .btn-ghost:hover{border-color:var(--periwinkle);}
+  .btn:focus-visible{outline:2px solid var(--lilac);outline-offset:2px;}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+
+  #result{margin-top:8px;}
+  .reading-head{text-align:center;margin-bottom:26px;}
+  .reading-head .q{font-family:var(--font-body);font-style:italic;font-size:24px;color:var(--lilac-deep);line-height:1.3;}
+  body.f-enchanted .reading-head .q, body.f-storybook .reading-head .q{font-style:italic;}
+  .reading-head .meta{font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-soft);margin-top:8px;font-weight:600;font-family:var(--font-body);}
+
+  .sectionlabel{font-family:var(--font-body);font-size:21px;color:var(--lilac-deep);font-weight:600;margin:26px 0 14px;text-align:center;}
+  .sectionlabel .sub{display:block;font-family:var(--font-body);font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-top:4px;}
+
+  .revealcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:var(--shadow);opacity:0;transform:translateY(14px);animation:rise .6s ease forwards;}
+  @keyframes rise{to{opacity:1;transform:translateY(0);}}
+  .revealcard .pos{font-size:14px;color:var(--gold);font-style:italic;font-weight:600;font-family:var(--font-body);}
+  .revealcard .cname{font-family:var(--font-body);font-size:27px;font-weight:600;color:var(--ink);margin:4px 0 2px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .revealcard .rev{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#7a5c1f;background:var(--gold-soft);padding:3px 9px;border-radius:999px;font-weight:700;font-family:var(--font-body);}
+  .revealcard .kw{font-size:15px;color:var(--ink-soft);font-style:italic;margin-bottom:12px;}
+  .revealcard .core{margin:0 0 10px;}
+  .revealcard .focusline{background:rgba(201,195,232,0.18);border-left:3px solid var(--lilac);padding:10px 14px;border-radius:0 10px 10px 0;font-size:16px;}
+  .revealcard .focusline b{color:var(--lilac-deep);text-transform:uppercase;font-size:11px;letter-spacing:0.14em;display:block;margin-bottom:3px;font-family:var(--font-body);}
+
+  .synergy{background:linear-gradient(135deg,rgba(201,166,107,0.10),rgba(142,130,190,0.10));border:1px solid var(--gold-soft);border-radius:var(--radius);padding:22px;margin:8px 0 16px;}
+  .synergy h3{font-family:var(--font-body);font-size:22px;color:var(--lilac-deep);margin:0 0 12px;font-weight:600;}
+  .synergy ul{margin:0;padding-left:20px;}
+  .synergy li{margin-bottom:9px;}
+  .synergy li::marker{color:var(--gold);}
+
+  .themecard{background:rgba(255,255,255,0.72);border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px;}
+  .themecard .tn{font-family:var(--font-body);font-size:19px;color:var(--ink);font-weight:600;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .themecard .tcore{font-size:15px;color:var(--ink-soft);margin-top:2px;}
+
+  .reflect{text-align:center;font-family:var(--font-body);font-style:italic;font-size:20px;color:var(--lilac-deep);padding:20px 10px;line-height:1.4;}
+
+  .entry{background:rgba(255,255,255,0.6);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:12px;}
+  .entry .etop{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+  .entry .eq{font-family:var(--font-body);font-style:italic;font-size:18px;color:var(--lilac-deep);}
+  .entry .edate{font-size:12px;color:var(--ink-soft);white-space:nowrap;font-family:var(--font-body);}
+  .entry .ecards{font-size:15px;color:var(--ink-soft);margin-top:6px;}
+  .entry .enote{font-size:16px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
+  .entry .eactions{margin-top:12px;display:flex;gap:8px;}
+  .link{background:none;border:none;color:var(--lilac);font-family:var(--font-body);font-size:15px;font-weight:700;cursor:pointer;padding:0;}
+  .link:hover{text-decoration:underline;}
+  .link.danger{color:#b26a8d;}
+
+  .empty{text-align:center;color:var(--ink-soft);padding:40px 20px;}
+  .empty .moon{font-size:34px;display:block;margin-bottom:12px;opacity:0.6;}
+
+  .libctrls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+  .libctrls input{flex:1;min-width:160px;}
+  .libcard{border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;background:rgba(255,255,255,0.5);}
+  .libcard summary{cursor:pointer;padding:14px 18px;font-family:var(--font-body);font-size:20px;color:var(--ink);font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center;}
+  .libcard summary::-webkit-details-marker{display:none;}
+  .libcard summary .suit{font-family:var(--font-body);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;}
+  .libcard[open] summary{border-bottom:1px solid var(--line);}
+  .libbody{padding:16px 18px;font-size:16px;}
+  .libbody .row{margin-bottom:11px;}
+  .libbody .row b{display:block;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:2px;font-weight:700;font-family:var(--font-body);}
+
+  .quizbox{text-align:center;padding:14px 6px;}
+  .quizprompt{font-size:16px;color:var(--ink-soft);margin-bottom:8px;}
+  .quizq{font-family:var(--font-body);font-size:22px;color:var(--lilac-deep);margin-bottom:18px;line-height:1.35;}
+  .quizans{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);text-align:left;font-size:16px;}
+  .quizans .cn{font-family:var(--font-body);font-size:22px;color:var(--ink);font-weight:600;margin-bottom:8px;}
+
+  .note-banner{font-size:14px;color:var(--ink-soft);text-align:center;margin-top:12px;}
+
+  @media (prefers-reduced-motion: reduce){
+    .revealcard{animation:none;opacity:1;transform:none;}
+    *{transition:none !important;}
+  }
+  @media (max-width:520px){
+    .reading-head .q{font-size:21px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 class="wordmark"><span class="glyph">&#10022;</span> revelio</h1>
+    <div class="tagline">a tarot reading companion</div>
+  </header>
+
+  <nav role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" aria-selected="true"  data-view="reading">Reading</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="journal">Journal</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="library">Library</button>
+  </nav>
+
+  <!-- ============ READING ============ -->
+  <section id="view-reading" role="tabpanel">
+    <div class="panel">
+      <h2 class="step">Choose your way in</h2>
+      <p class="hint">Read the way you naturally do, or lay a set spread.</p>
+      <div class="modetoggle" id="mode-toggle"></div>
+    </div>
+
+    <div class="panel">
+      <h2 class="step">Set the question</h2>
+      <p class="hint">Optional. Your question is kept with the reading and shapes the interpretation.</p>
+      <label class="field" for="question">what's on your mind?</label>
+      <input type="text" id="question" placeholder="e.g. What should I focus on this month?" />
+      <label class="field" for="focus" style="margin-top:16px;">focus area</label>
+      <div class="chips" id="focus-chips"></div>
+      <label class="field" style="margin-top:16px;">this reading is</label>
+      <div class="chips" id="tone-chips"></div>
+    </div>
+
+    <!-- INTUITIVE -->
+    <div id="intuitive-panels">
+      <div class="panel">
+        <h2 class="step">The cards that fell</h2>
+        <p class="hint">Shuffle your deck and let the cards fall as you always do. Add each one in the order it came, however many that is.</p>
+        <div id="fell-list"></div>
+        <button class="addcard" id="add-fell">&#43; Add another card</button>
+        <div class="fellcount" id="fell-count"></div>
+      </div>
+      <div class="panel">
+        <h2 class="step">The four at the base</h2>
+        <p class="hint">The four cards resting at the bottom of the deck, read together as the overarching theme of the reading. Optional, leave blank to skip.</p>
+        <div id="theme-list"></div>
+      </div>
+    </div>
+
+    <!-- STRUCTURED -->
+    <div id="structured-panels" hidden>
+      <div class="panel">
+        <h2 class="step">Choose a spread</h2>
+        <p class="hint">Lay your own cards, then enter what fell in each position.</p>
+        <div class="chips" id="spread-chips"></div>
+      </div>
+      <div class="panel">
+        <h2 class="step">Enter the cards</h2>
+        <p class="hint">Tap a card's orientation to flip it upright or reversed.</p>
+        <div id="positions"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <button class="btn btn-primary" id="reveal">Reveal the reading</button>
+      <p class="note-banner" id="reveal-note"></p>
+    </div>
+
+    <div id="result" aria-live="polite"></div>
+  </section>
+
+  <!-- ============ JOURNAL ============ -->
+  <section id="view-journal" role="tabpanel" hidden>
+    <div class="panel">
+      <h2 class="step">Journal</h2>
+      <p class="hint">Saved readings live here on this device. Add notes to revisit later.</p>
+      <input type="text" id="journal-search" placeholder="search your readings..." style="margin-bottom:14px;" />
+      <div id="journal-patterns"></div>
+      <div id="journal-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ LIBRARY ============ -->
+  <section id="view-library" role="tabpanel" hidden>
+    <div class="panel">
+      <h2 class="step">Library</h2>
+      <div class="libctrls">
+        <input type="text" id="lib-search" placeholder="Search a card..." />
+        <button class="chip" data-filter="all" aria-pressed="true">All</button>
+        <button class="chip" data-filter="major">Major</button>
+        <button class="chip" data-filter="wands">Wands</button>
+        <button class="chip" data-filter="cups">Cups</button>
+        <button class="chip" data-filter="swords">Swords</button>
+        <button class="chip" data-filter="pentacles">Pentacles</button>
+      </div>
+      <div id="lib-list"></div>
+    </div>
+    <div class="panel">
+      <h2 class="step">Study</h2>
+      <p class="hint">A gentle self-quiz. Read the meaning, guess the card, then reveal.</p>
+      <div class="quizbox" id="quizbox"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ============================================================
+   REVELIO, tarot reading companion (single file, no dependencies)
+   Card meanings are original text in the Rider Waite Smith tradition.
+   ============================================================ */
+
+var mem = {};
+var store = {
+  get:function(k){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):null; } catch(e){ return mem[k]!==undefined?mem[k]:null; } },
+  set:function(k,val){ try{ localStorage.setItem(k, JSON.stringify(val)); } catch(e){ mem[k]=val; } }
+};
+
+var C=function(name,arcana,suit,num,kw,up,rev,love,career,fin){
+  return {name:name,arcana:arcana,suit:suit,num:num,kw:kw,up:up,rev:rev,love:love,career:career,fin:fin};
+};
+var CARDS=[
+  C("The Fool","major",null,0,"new beginnings, faith, spontaneity","A fresh start and a leap into the unknown, taken with open-hearted trust.","Recklessness or hesitation, whether leaping without looking or freezing at the edge.","A new romance, or a chance to meet love with fresh eyes. Keep a little caution.","A bold new venture or role. Exciting, unproven, and worth the risk.","A risky opportunity where enthusiasm still needs a plan behind it."),
+  C("The Magician","major",null,1,"manifestation, willpower, skill","You have every tool you need, and focused will turns intention into reality.","Scattered energy and untapped talent, or slick promises with nothing behind them.","Magnetic attraction, and the power to create what you want together.","Skill and initiative align. A strong time to launch or pitch.","Resourcefulness pays. Be wary of schemes that seem too polished."),
+  C("The High Priestess","major",null,2,"intuition, mystery, inner voice","Trust your intuition. The answer lives in stillness, not in the noise.","Ignored instincts, or secrets you are keeping from yourself.","A deep intuitive connection, or feelings not yet spoken aloud.","Listen beneath the surface. Hidden information is at play.","Trust a gut feeling, but wait for what is concealed to surface."),
+  C("The Empress","major",null,3,"abundance, nurturing, creativity","Abundance, growth, and nurturing creativity in full bloom.","Creative block and self-neglect, or care that has become smothering.","Sensual, nurturing love, a deepening bond, or literal fertility.","Creative projects flourish in a fertile, productive season.","Comfort and growth. Watch a tendency to overindulge."),
+  C("The Emperor","major",null,4,"structure, authority, stability","Structure, discipline, and steady authority build something lasting.","Rigidity and control, or a damaging lack of discipline.","A stable, protective partner, or a need for more structure.","Leadership, order, and long-term planning are rewarded.","Sound structure and discipline secure your resources."),
+  C("The Hierophant","major",null,5,"tradition, guidance, shared belief","Tradition, mentorship, and established paths offer real guidance.","Questioning convention, or breaking from the rulebook on purpose.","A committed, conventional bond built on shared values.","Learning within an institution, mentorship, or proven systems.","Conventional, cautious money management serves you well."),
+  C("The Lovers","major",null,6,"union, choice, alignment of values","A meaningful union, and a values-led choice made from the heart.","Disharmony and misalignment, or a hard choice you keep avoiding.","Deep connection and harmony, or a defining relationship decision.","A partnership, or a path choice that must align with your values.","A financial decision best made in line with your values."),
+  C("The Chariot","major",null,7,"willpower, drive, control","Victory through focus and willpower. Hold your course.","Lost direction and scattered drive, or forcing what will not move.","Pursuing what you want with determination, or steering through a rough patch.","Ambition and discipline carry you forward. Stay the course.","Disciplined effort brings gains. Avoid impulsive swerves."),
+  C("Strength","major",null,8,"courage, patience, gentle power","Quiet courage and compassion tame difficulty far better than force.","Self-doubt and spent patience, or raw impulse left unchecked.","Patience and tenderness deepen the bond.","Steady resolve and grace under pressure earn respect.","Calm patience over panic steadies your situation."),
+  C("The Hermit","major",null,9,"introspection, solitude, inner light","A time to withdraw, reflect, and seek your own inner light.","Isolation and loneliness, or avoiding reflection you need.","A need for space, or the search for deeper meaning in love.","Solo focus and soul-searching about your direction.","Step back and reassess before making any move."),
+  C("Wheel of Fortune","major",null,10,"cycles, change, turning points","The wheel turns in your favour. A lucky shift, and a new cycle.","Bad luck and resistance to change, or a cycle you must break.","A fated turn, or a relationship entering a new phase.","A turning point, or an unexpected opportunity, arrives.","Fortunes shift. Ride the upswing and prepare for the dip."),
+  C("Justice","major",null,11,"fairness, truth, accountability","Truth, fairness, and consequences meeting their cause.","Unfairness and avoided accountability, or plain dishonesty.","Honesty and balance, and a relationship weighed fairly.","Fair outcomes, contracts, or decisions that ask for integrity.","Legal or financial matters resolve according to what is just."),
+  C("The Hanged Man","major",null,12,"surrender, new perspective, pause","A pause that reveals a new perspective through letting go.","Stalling and resistance, or needless martyrdom.","Seeing the relationship from a new angle, or a needed pause.","A holding pattern that asks you to rethink your approach.","Put decisions on hold. A fresh view is coming."),
+  C("Death","major",null,13,"endings, transformation, release","A necessary ending clearing the way for real transformation.","Resisting change, or clinging to what is already over.","The end of one chapter making room for renewal.","A major transition. One door closes so another can open.","An old financial situation ends. Adapt to what is next."),
+  C("Temperance","major",null,14,"balance, moderation, blending","Balance, patience, and blending opposites into harmony.","Excess and imbalance, or impatience throwing things off.","A harmonious, well-balanced partnership.","Steady, moderate progress and good collaboration.","Moderation, and the careful blending of resources."),
+  C("The Devil","major",null,15,"attachment, temptation, shadow","Attachment and temptation, or patterns that quietly bind you.","Breaking free, reclaiming your power, and releasing a chain.","Intense attraction that may turn possessive or unhealthy.","Feeling trapped, golden handcuffs, or over-focus on status.","Materialism or debt that holds you captive."),
+  C("The Tower","major",null,16,"upheaval, revelation, awakening","Sudden upheaval topples a false foundation. Shocking, but clarifying.","Fearing disaster, or a slow-motion collapse you keep delaying.","A sudden shake-up or revelation within the relationship.","Abrupt change, or the collapse of an unstable situation.","A financial shock. Rebuild on truer ground."),
+  C("The Star","major",null,17,"hope, healing, renewal","Hope, healing, and renewed faith after a hard passage.","Discouragement and lost faith, or feeling uninspired.","Healing, hope, and open-hearted connection.","Renewed inspiration and a hopeful direction.","Optimism returns, and a slow, healing recovery."),
+  C("The Moon","major",null,18,"illusion, intuition, uncertainty","Illusion and uncertainty. Trust intuition to move through the fog.","Confusion clearing, or long-held fears finally released.","Unspoken feelings and doubts, or things not as they seem.","Ambiguity. Not all the information is visible yet.","Unclear finances. Verify before you trust the numbers."),
+  C("The Sun","major",null,19,"joy, success, vitality","Radiant joy, success, and clarity. A warm, positive light.","Temporary clouds and dimmed optimism, or joy delayed.","Warmth, happiness, and open, easy connection.","Success, recognition, and energising progress.","Prosperity and financial sunshine."),
+  C("Judgement","major",null,20,"reckoning, awakening, calling","A reckoning and awakening. You are called to rise renewed.","Self-doubt and ignoring the call, or harsh self-judgement.","A relationship reassessed, whether a second chance or an honest reckoning.","A calling, a decisive evaluation, or a fresh sense of purpose.","Review past decisions to move forward wisely."),
+  C("The World","major",null,21,"completion, wholeness, fulfilment","Completion, wholeness, and the fulfilling close of a cycle.","An unfinished chapter, or a goal not yet whole.","A complete, fulfilling union, or reaching a milestone.","Accomplishment, and the successful end of a big effort.","Financial goals realised, and a cycle completed."),
+  C("Ace of Wands","minor","wands",1,"inspiration, spark, potential","A spark of inspiration and raw creative potential igniting.","Delays and false starts, or a spark that quickly fizzles.","New passion, or the first bright flush of desire.","A promising new idea or venture catches light.","An early opportunity with real growth potential."),
+  C("Two of Wands","minor","wands",2,"planning, choice, first steps","Planning ahead and choosing your direction from a place of power.","Fear of the unknown, or plans made too loosely.","Deciding together on the future of a relationship.","Weighing options for expansion, or a bolder path.","Planning a future investment, or a bigger move."),
+  C("Three of Wands","minor","wands",3,"expansion, foresight, momentum","Expansion and foresight. Your plans are underway and moving outward.","Delays and obstacles, or a vision that has grown too narrow.","A relationship expanding, or awaiting developments.","Growth and momentum. Look beyond the horizon.","Investments beginning to pay off."),
+  C("Four of Wands","minor","wands",4,"celebration, harmony, milestones","Celebration, harmony, and a happy milestone with your people.","A missed celebration, or tension on the home front.","Joyful stability, an engagement, or a homecoming.","A team milestone worth celebrating.","Stability worth pausing to mark."),
+  C("Five of Wands","minor","wands",5,"conflict, competition, friction","Competition and friction, clashing energies vying to be heard.","Avoiding conflict, or finally finding resolution.","Petty arguments, or clashing wants.","Rivalry, brainstorming friction, or a crowded field.","Financial disagreements, or competing demands."),
+  C("Six of Wands","minor","wands",6,"victory, recognition, confidence","Public victory and well-earned recognition.","A win delayed, or recognition quietly withheld.","Feeling appreciated and admired.","Success and praise for your work.","A rewarding result, or a bonus."),
+  C("Seven of Wands","minor","wands",7,"defence, perseverance, standing firm","Standing your ground and defending what you have built.","Feeling overwhelmed, or giving up the fight.","Defending the relationship, or your own needs within it.","Holding your position against real competition.","Protecting your resources under pressure."),
+  C("Eight of Wands","minor","wands",8,"speed, movement, news","Swift movement and fast-arriving news. Things accelerate.","Delays and frustration, or energy scattered in every direction.","Rapid developments, or a message you have been waiting for.","Fast progress and quick decisions.","Money moving quickly. Act promptly."),
+  C("Nine of Wands","minor","wands",9,"resilience, persistence, boundaries","Weary but resilient. One more push, guarded and determined.","Burnout and paranoia, or refusing the help you need.","Wariness from past hurt, and guarding your heart.","Persevering despite fatigue near the finish line.","Defending your gains after a hard stretch."),
+  C("Ten of Wands","minor","wands",10,"burden, responsibility, overload","Carrying a heavy load. Success that has become a burden.","Releasing or delegating what you cannot carry alone.","Feeling weighed down by relationship responsibilities.","Overwork, and far too much on your plate.","Financial burdens stretching you thin."),
+  C("Page of Wands","minor","wands",11,"exploration, enthusiasm, discovery","Eager exploration, and a spark of fresh, playful ambition.","Aimless energy, or an idea that has stalled.","Flirtation, excitement, and new curiosity.","An exciting new interest, or a learning phase.","A tentative but promising new idea."),
+  C("Knight of Wands","minor","wands",12,"passion, adventure, impulse","Bold, passionate action and adventurous drive.","Recklessness and impatience, or burning out fast.","A passionate, adventurous pursuit, possibly impulsive.","Charging ahead on an exciting project.","Impulsive spending, or a daring move. Temper it."),
+  C("Queen of Wands","minor","wands",13,"confidence, warmth, charisma","Confident, warm, and magnetic. Vibrant and self-assured.","Insecurity and jealousy, or scattered self-doubt.","Radiant confidence that draws others in.","Charisma and boldness that lead well.","Confident, savvy handling of your resources."),
+  C("King of Wands","minor","wands",14,"vision, leadership, boldness","Visionary leadership, and bold, charismatic command.","Impulsive or domineering leadership.","A passionate, take-charge partner.","Entrepreneurial vision and inspiring leadership.","Bold, big-picture financial vision."),
+  C("Ace of Cups","minor","cups",1,"new love, openness, compassion","An overflowing new emotion: love, compassion, a tender opening.","Blocked emotions, or a cup that has run empty.","New love, or a deep emotional beginning.","Emotional fulfilment, or creative flow at work.","A feel-good gain. Just lead with the heart carefully."),
+  C("Two of Cups","minor","cups",2,"partnership, attraction, connection","A balanced union, and a genuine heart-to-heart connection.","Imbalance, or a breakdown in the connection.","A soulmate bond, or deep mutual attraction.","A strong partnership or collaboration.","A mutually beneficial financial partnership."),
+  C("Three of Cups","minor","cups",3,"friendship, celebration, community","Joyful celebration, and friendship worth toasting.","Overindulgence and gossip, or a frayed friendship.","Social joy, or a relationship blessed by community.","Collaboration and team celebration.","Shared abundance, or a reason to celebrate."),
+  C("Four of Cups","minor","cups",4,"apathy, contemplation, missed offers","Discontent and brooding, and an offer overlooked while you sulk.","Renewed interest and openness returning.","Boredom, or overlooking someone right in front of you.","Apathy, or missing an opportunity out of dissatisfaction.","Ignoring an offer that is worth reconsidering."),
+  C("Five of Cups","minor","cups",5,"loss, grief, regret","Grief and regret, with eyes fixed on what is spilled, not what remains.","Acceptance, forgiveness, and moving on.","Heartbreak, or dwelling on an old hurt.","Disappointment or a setback to grieve, then release.","A loss that feels bigger than it is. Look at what is left."),
+  C("Six of Cups","minor","cups",6,"nostalgia, memory, reunion","Sweet nostalgia, kindness, and comfort from the past.","Stuck in the past, or idealising what once was.","A reunion, or a nostalgic, tender connection.","Reconnecting with old contacts, or familiar ground.","Support from family, or a return of past resources."),
+  C("Seven of Cups","minor","cups",7,"choices, illusion, fantasy","Many tempting options, some illusory. Choose with clear eyes.","Clarity returns, and a decisive choice emerges.","Fantasy versus reality, with too many options to weigh.","Many possibilities, but a real need to focus.","Tempting yet unrealistic options. Be discerning."),
+  C("Eight of Cups","minor","cups",8,"walking away, seeking meaning","Walking away from what no longer fulfils, seeking something deeper.","Fear of leaving, or drifting without direction.","Leaving a relationship that has run its course.","Departing a role that no longer satisfies.","Leaving behind a plan that simply is not working."),
+  C("Nine of Cups","minor","cups",9,"contentment, wishes fulfilled","Contentment and wishes granted. The wish card.","Smugness, or an unfulfilled longing beneath the surface.","Emotional satisfaction and real happiness.","Satisfaction and quiet pride in your achievements.","Comfort, and a wish granted."),
+  C("Ten of Cups","minor","cups",10,"harmony, family, lasting joy","Lasting emotional harmony and joyful, shared fulfilment.","A rift at home, or a picture-perfect facade cracking.","Deep, lasting happiness, and a shared vision.","A harmonious environment aligned with your values.","Security that supports a happy home."),
+  C("Page of Cups","minor","cups",11,"wonder, intuition, gentle messages","A gentle creative or emotional message, full of wonder and openness.","Emotional immaturity, or blocked creativity.","A sweet message, a flirtation, or a new tender feeling.","A creative idea or intuitive nudge worth following.","A small but hopeful opportunity."),
+  C("Knight of Cups","minor","cups",12,"romance, charm, following the heart","A romantic, charming invitation led by the heart.","Moodiness and unrealistic ideals, or hollow charm.","A romantic gesture, or a proposal, arrives.","Following a heartfelt or creative pursuit.","A tempting offer led by feeling. Check the substance."),
+  C("Queen of Cups","minor","cups",13,"compassion, depth, intuition","Deep compassion, emotional wisdom, and intuitive care.","Emotional overwhelm, or over-giving to the point of depletion.","A nurturing, emotionally attuned partner.","Empathy and intuition guide you well.","Lead with intuition, but do not ignore the numbers."),
+  C("King of Cups","minor","cups",14,"balance, calm, diplomacy","Calm emotional mastery, and steady, diplomatic care.","Moodiness and suppression, or emotional manipulation.","A mature, emotionally balanced partner.","Diplomacy and composure under pressure.","Balanced, level-headed money decisions."),
+  C("Ace of Swords","minor","swords",1,"clarity, truth, breakthrough","A breakthrough of clarity and truth, cutting cleanly through.","Confusion and muddled thinking, or logic misused.","A clear truth spoken, or a decisive turning point.","A sharp new idea, or a clear-cut decision.","A clear, rational financial insight."),
+  C("Two of Swords","minor","swords",2,"stalemate, indecision, avoidance","A stalemate. A hard choice avoided with eyes shut tight.","The blindfold lifts, and a decision is finally made.","Indecision, or an uneasy truce.","A tough call postponed.","Weighing two options. Do not stall too long."),
+  C("Three of Swords","minor","swords",3,"heartbreak, sorrow, painful truth","Heartbreak and painful truth, a sorrow that has to be felt.","Healing, forgiveness, and releasing the pain.","Heartache, betrayal, or a painful separation.","Hurtful feedback, or a disappointing rupture.","A painful loss to process, then recover from."),
+  C("Four of Swords","minor","swords",4,"rest, recovery, respite","Needed rest and quiet recovery before the next round.","Burnout and restlessness, or resisting the rest you need.","A pause to recover, or to reflect on the relationship.","A break to recharge from stress.","Pause and regroup before deciding."),
+  C("Five of Swords","minor","swords",5,"conflict, hollow victory, tension","Conflict won at a cost. A hollow victory that divides.","Reconciliation, or walking away from the fight.","Arguments where winning damages the bond.","Cutthroat tension, or a costly clash.","A gain that leaves resentment. Weigh the true cost."),
+  C("Six of Swords","minor","swords",6,"transition, moving on, calmer water","Moving toward calmer water, leaving difficulty behind.","Struggling to move on, or unresolved baggage.","Moving past turbulence into steadier ground.","A transition to a smoother situation.","Gradual recovery, and a shift for the better."),
+  C("Seven of Swords","minor","swords",7,"strategy, stealth, deception","Strategy or stealth, a cleverness that may skirt honesty.","Coming clean, or a deception exposed.","Secrecy, or a lack of transparency.","A cunning strategy, or someone working behind the scenes.","Guard against deception, or cutting corners."),
+  C("Eight of Swords","minor","swords",8,"restriction, trapped, limiting beliefs","Feeling trapped by your own fears, though the cage is unlocked.","Freeing yourself, and seeing your options again.","Feeling stuck or powerless in a relationship.","Feeling boxed in by limiting beliefs.","Perceived limits that are more mental than real."),
+  C("Nine of Swords","minor","swords",9,"anxiety, worry, dread","Anxiety and dread, with worries loudest in the dark of night.","Anxiety easing, or fears faced in daylight.","Worry and overthinking straining the connection.","Stress and sleepless pressure.","Money worries magnified by fear. Check the real picture."),
+  C("Ten of Swords","minor","swords",10,"painful ending, rock bottom, closure","A painful ending and rock bottom, though the worst is over.","Recovery beginning. The only way now is up.","A definitive, painful ending that clears the way.","A collapse or betrayal that forces a fresh start.","A low point that marks the turn upward."),
+  C("Page of Swords","minor","swords",11,"curiosity, ideas, vigilance","Sharp curiosity and restless new ideas seeking the truth.","Gossip and scattered thoughts, or hasty words.","Direct communication, or nervous new energy.","A curious, analytical new project or phase.","Research thoroughly before you leap."),
+  C("Knight of Swords","minor","swords",12,"ambition, drive, directness","Fast, direct, ambitious action, charging toward the goal.","Recklessness and aggression, or acting without thinking.","An intense, fast-moving pursuit, possibly too hasty.","Bold, decisive drive toward a target.","Quick decisions. Avoid rash moves."),
+  C("Queen of Swords","minor","swords",13,"clarity, independence, honesty","Clear-eyed honesty, and independent, perceptive judgement.","Coldness and harsh words, or lingering bitterness.","Honesty and clear boundaries within connection.","Sharp thinking and straight talk serve you.","Objective, clear-headed financial choices."),
+  C("King of Swords","minor","swords",14,"intellect, authority, ethical truth","Authority through clear intellect, truth, and fair judgement.","Cold logic and manipulation, or authority misused.","A rational, principled partner who values honesty.","Sound leadership through clear, ethical decisions.","Disciplined, logical financial strategy."),
+  C("Ace of Pentacles","minor","pentacles",1,"opportunity, prosperity, new venture","A tangible new opportunity for prosperity and growth.","A missed chance, or a shaky financial start.","A stable, grounded new relationship.","A promising job, offer, or new venture.","A solid financial opportunity, or a windfall."),
+  C("Two of Pentacles","minor","pentacles",2,"balance, adaptability, juggling","Juggling demands with agility and adaptable balance.","Overwhelm, or dropping the ball from too much at once.","Balancing a relationship with other priorities.","Managing multiple responsibilities well.","Balancing budgets and shifting priorities."),
+  C("Three of Pentacles","minor","pentacles",3,"teamwork, skill, building","Skilled teamwork building something of quality together.","Poor collaboration, or effort that goes unrecognised.","Working as a team, and building something together.","Collaboration, and recognition of your craft.","Investing in skill and joint effort pays off."),
+  C("Four of Pentacles","minor","pentacles",4,"security, control, holding tight","Security through saving, though the grip may be too tight.","Loosening control, or reckless letting go.","Guardedness, or holding on a little too tightly.","Protecting your position, perhaps over-cautiously.","Saving and stability. Beware hoarding or stinginess."),
+  C("Five of Pentacles","minor","pentacles",5,"hardship, insecurity, feeling left out","Material hardship and insecurity, though help is nearer than it feels.","Recovery from hardship, and support returning.","Feeling excluded, or strained by tough times.","Job insecurity, or a genuinely rough patch.","Financial strain. Look for the support you are overlooking."),
+  C("Six of Pentacles","minor","pentacles",6,"generosity, giving and receiving","A fair flow of giving and receiving, generosity in balance.","Strings attached and imbalance, or one-sided giving.","Balanced give-and-take, or a lopsided dynamic to address.","Fair reward, mentorship, or shared resources.","Generosity returns. Balance help given and received."),
+  C("Seven of Pentacles","minor","pentacles",7,"patience, assessment, long-term view","Patient assessment of a long investment beginning to grow.","Impatience, or effort with little to show yet.","Assessing whether a relationship is worth the investment.","Evaluating slow but steady progress.","Long-term investments maturing. Patience pays."),
+  C("Eight of Pentacles","minor","pentacles",8,"mastery, diligence, craft","Diligent craft and dedicated skill-building toward mastery.","Cut corners and perfectionism, or lost focus.","Putting in the work to deepen a bond.","Honing your craft. Your dedication is noticed.","Steady effort steadily improves your standing."),
+  C("Nine of Pentacles","minor","pentacles",9,"abundance, independence, self-worth","Earned abundance, independence, and refined self-sufficiency.","Overwork, or dependence that undermines your freedom.","Self-assured independence within love.","Enjoying the fruits of disciplined work.","Financial independence and well-earned comfort."),
+  C("Ten of Pentacles","minor","pentacles",10,"wealth, legacy, long-term security","Lasting wealth, legacy, and long-term family security.","Financial instability, or family and legacy tension.","A stable, family-minded, lasting union.","Long-term stability and lasting reward.","Wealth, inheritance, and secure foundations."),
+  C("Page of Pentacles","minor","pentacles",11,"ambition, study, groundedness","A grounded new opportunity, and eagerness to learn.","Procrastination, or a plan left unrealised.","A steady, practical new interest.","A study opportunity, or a promising entry point.","A new venture worth learning about."),
+  C("Knight of Pentacles","minor","pentacles",12,"reliability, routine, patience","Reliable, methodical progress through steady effort.","Stagnation and boredom, or over-caution.","A dependable, loyal partner, slow but steady.","Dependable, thorough work. Consistency wins.","Careful, methodical financial building."),
+  C("Queen of Pentacles","minor","pentacles",13,"nurturing, practical, abundant","Practical nurturing, and grounded, generous abundance.","Self-neglect, or a lost work-life balance.","A warm, providing, grounded partner.","Balancing care and practicality productively.","Resourceful, secure, and generous management."),
+  C("King of Pentacles","minor","pentacles",14,"wealth, stability, discipline","Abundant stability built through discipline and shrewd care.","Greed and materialism, or controlling through money.","A stable, providing, dependable partner.","Successful leadership and sound business sense.","Wealth, security, and masterful money management.")
+];
+var CARD_BY_NAME={};
+CARDS.forEach(function(c){ CARD_BY_NAME[c.name]=c; });
+
+var SPREADS={
+  single:{label:"Single card", positions:[{name:"The card", role:"A focused message for right now"}]},
+  three:{label:"Past, Present, Future", positions:[
+    {name:"Past", role:"What has shaped this"},
+    {name:"Present", role:"Where things stand now"},
+    {name:"Future", role:"Where this is heading"}]},
+  situation:{label:"Situation, Action, Outcome", positions:[
+    {name:"Situation", role:"The heart of the matter"},
+    {name:"Action", role:"What to do about it"},
+    {name:"Outcome", role:"The likely result"}]},
+  relationship:{label:"Relationship", positions:[
+    {name:"You", role:"Your role and energy"},
+    {name:"Them", role:"Their role and energy"},
+    {name:"The connection", role:"What flows between you"},
+    {name:"Guidance", role:"What the bond needs"}]},
+  crossroads:{label:"The crossroads", positions:[
+    {name:"You now", role:"Where you stand"},
+    {name:"Path A", role:"If you go one way"},
+    {name:"Path B", role:"If you go the other"},
+    {name:"What to weigh", role:"The deciding factor"}]},
+  celtic:{label:"Celtic Cross", positions:[
+    {name:"The present", role:"The core of the matter"},
+    {name:"The challenge", role:"What crosses you"},
+    {name:"The root", role:"Underlying foundation"},
+    {name:"The past", role:"A receding influence"},
+    {name:"The crown", role:"What you aim for"},
+    {name:"The future", role:"What is approaching"},
+    {name:"Yourself", role:"Your approach"},
+    {name:"Environment", role:"Outside influences"},
+    {name:"Hopes and fears", role:"What you hope or dread"},
+    {name:"Outcome", role:"Where it leads"}]}
+};
+
+var FOCI=[
+  {key:"general", label:"General"},
+  {key:"love", label:"Love"},
+  {key:"career", label:"Career"},
+  {key:"fin", label:"Finances"},
+  {key:"decision", label:"Decision"}
+];
+
+var state={mode:"intuitive", spread:"three", focus:"general", tone:"self",
+  fell:[{card:"",reversed:false},{card:"",reversed:false},{card:"",reversed:false},{card:"",reversed:false},{card:"",reversed:false}],
+  theme:[{card:"",reversed:false},{card:"",reversed:false},{card:"",reversed:false},{card:"",reversed:false}],
+  picks:[]};
+
+function el(id){return document.getElementById(id);}
+function suitName(s){return s?(s.charAt(0).toUpperCase()+s.slice(1)):"Major Arcana";}
+function ordinal(n){var s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+
+function cardOptions(selected){
+  var html='<option value="">choose a card</option>';
+  var groups=[["Major Arcana",null],["Wands","wands"],["Cups","cups"],["Swords","swords"],["Pentacles","pentacles"]];
+  groups.forEach(function(g){
+    html+='<optgroup label="'+g[0]+'">';
+    CARDS.filter(function(c){return c.suit===g[1];}).forEach(function(c){
+      html+='<option value="'+c.name+'"'+(c.name===selected?" selected":"")+'>'+c.name+'</option>';
+    });
+    html+='</optgroup>';
+  });
+  return html;
+}
+function makeCardPicker(rowState, topHtml, onRemove){
+  var wrap=document.createElement("div"); wrap.className="cardline";
+  var top=document.createElement("div"); top.className="cltop"; top.innerHTML=topHtml;
+  if(onRemove){
+    var rm=document.createElement("button"); rm.className="removecard"; rm.type="button"; rm.setAttribute("aria-label","Remove card"); rm.innerHTML="&times;";
+    rm.onclick=onRemove; top.appendChild(rm);
+  }
+  wrap.appendChild(top);
+  var pick=document.createElement("div"); pick.className="cardpick";
+  var sel=document.createElement("select"); sel.innerHTML=cardOptions(rowState.card);
+  sel.onchange=function(){ rowState.card=sel.value; if(state.mode==="intuitive") updateFellCount(); };
+  var ori=document.createElement("button"); ori.className="orient"; ori.type="button";
+  ori.setAttribute("data-reversed", rowState.reversed?"true":"false");
+  ori.textContent=rowState.reversed?"\u27F2 Reversed":"\u2191 Upright";
+  ori.onclick=function(){ rowState.reversed=!rowState.reversed; ori.setAttribute("data-reversed", rowState.reversed?"true":"false"); ori.textContent=rowState.reversed?"\u27F2 Reversed":"\u2191 Upright"; };
+  pick.appendChild(sel); pick.appendChild(ori); wrap.appendChild(pick);
+  return wrap;
+}
+
+function renderModeToggle(){
+  var wrap=el("mode-toggle"); wrap.innerHTML="";
+  [["intuitive","Intuitive"],["structured","Structured spread"]].forEach(function(m){
+    var b=document.createElement("button"); b.className="chip"; b.textContent=m[1];
+    b.setAttribute("aria-pressed", state.mode===m[0]?"true":"false");
+    b.onclick=function(){ state.mode=m[0]; renderModeToggle(); toggleModePanels(); };
+    wrap.appendChild(b);
+  });
+}
+function toggleModePanels(){
+  el("intuitive-panels").hidden = state.mode!=="intuitive";
+  el("structured-panels").hidden = state.mode!=="structured";
+}
+
+function renderFocusChips(){
+  var wrap=el("focus-chips"); wrap.innerHTML="";
+  FOCI.forEach(function(f){
+    var b=document.createElement("button"); b.className="chip"; b.textContent=f.label;
+    b.setAttribute("aria-pressed", f.key===state.focus?"true":"false");
+    b.onclick=function(){ state.focus=f.key; renderFocusChips(); };
+    wrap.appendChild(b);
+  });
+}
+
+var TONES=[{key:"self",label:"for myself"},{key:"other",label:"for someone else"}];
+function renderToneChips(){
+  var wrap=el("tone-chips"); if(!wrap) return; wrap.innerHTML="";
+  TONES.forEach(function(t){
+    var b=document.createElement("button"); b.className="chip"; b.textContent=t.label;
+    b.setAttribute("aria-pressed", t.key===state.tone?"true":"false");
+    b.onclick=function(){ state.tone=t.key; renderToneChips(); };
+    wrap.appendChild(b);
+  });
+}
+function toneTransform(text){
+  if(state.tone==="self"||!text) return text;
+  return text
+    .replace(/\bYourself\b/g,"Themselves").replace(/\byourself\b/g,"themselves")
+    .replace(/\bYours\b/g,"Theirs").replace(/\byours\b/g,"theirs")
+    .replace(/\bYour\b/g,"Their").replace(/\byour\b/g,"their")
+    .replace(/\bYou\b/g,"They").replace(/\byou\b/g,"they");
+}
+
+function renderFell(){
+  var wrap=el("fell-list"); wrap.innerHTML="";
+  state.fell.forEach(function(row,i){
+    var onRemove = state.fell.length>1 ? function(){ state.fell.splice(i,1); renderFell(); } : null;
+    wrap.appendChild(makeCardPicker(row, ordinal(i+1)+" to fall", onRemove));
+  });
+  updateFellCount();
+}
+function updateFellCount(){
+  var n=state.fell.filter(function(r){return r.card;}).length;
+  el("fell-count").textContent = n===0 ? "" : (n===1 ? "1 card fallen" : n+" cards fallen");
+}
+function renderTheme(){
+  var wrap=el("theme-list"); wrap.innerHTML="";
+  state.theme.forEach(function(row,i){
+    wrap.appendChild(makeCardPicker(row, "Base card "+(i+1), null));
+  });
+}
+function renderSpreadChips(){
+  var wrap=el("spread-chips"); wrap.innerHTML="";
+  Object.keys(SPREADS).forEach(function(key){
+    var b=document.createElement("button"); b.className="chip"; b.textContent=SPREADS[key].label;
+    b.setAttribute("aria-pressed", key===state.spread?"true":"false");
+    b.onclick=function(){ state.spread=key; state.picks=[]; renderSpreadChips(); renderPositions(); };
+    wrap.appendChild(b);
+  });
+}
+function renderPositions(){
+  var wrap=el("positions"); wrap.innerHTML="";
+  SPREADS[state.spread].positions.forEach(function(p,i){
+    if(!state.picks[i]) state.picks[i]={card:"",reversed:false};
+    var block=document.createElement("div");
+    block.innerHTML='<div class="plabel">'+p.name+'</div><span class="prole">'+p.role+'</span>';
+    block.appendChild(makeCardPicker(state.picks[i], "Card", null));
+    wrap.appendChild(block);
+  });
+}
+
+function focusLabel(){var f=FOCI.filter(function(x){return x.key===state.focus;})[0];return f?f.label:"General";}
+function domainText(card){
+  if(state.focus==="love")return card.love;
+  if(state.focus==="career")return card.career;
+  if(state.focus==="fin")return card.fin;
+  return null;
+}
+
+function buildSynergy(chosen){
+  var notes=[];
+  if(chosen.length<2) return notes;
+  var majors=chosen.filter(function(x){return x.card.arcana==="major";});
+  if(majors.length>=Math.max(2, Math.ceil(chosen.length/2))){
+    notes.push("A strong showing of Major Arcana ("+majors.length+") suggests powerful, fated forces at work. This reading points to significant life themes rather than everyday matters.");
+  }
+  var suits={wands:0,cups:0,swords:0,pentacles:0};
+  chosen.forEach(function(x){ if(x.card.suit) suits[x.card.suit]++; });
+  var suitTheme={wands:"passion, energy, and ambition",cups:"emotions, relationships, and intuition",swords:"thoughts, communication, and conflict",pentacles:"work, money, and the material world"};
+  Object.keys(suits).forEach(function(s){
+    if(suits[s]>=Math.max(2,Math.ceil(chosen.length/2))){
+      notes.push("A run of "+suitName(s)+" places "+suitTheme[s]+" at the centre of this reading.");
+    }
+  });
+  var rev=chosen.filter(function(x){return x.reversed;});
+  if(rev.length>=2 && rev.length>=Math.ceil(chosen.length/2)){
+    notes.push("Several reversed cards point to internal, blocked, or delayed energy. Much of the work here may be inward rather than outward.");
+  }
+  var numTheme={1:"fresh beginnings and raw potential",2:"balance, partnership, and choices",3:"growth, creativity, and community",4:"stability and structure",5:"conflict, change, and instability",6:"harmony and adjustment",7:"assessment and reflection",8:"movement and mastery",9:"intensity nearing completion",10:"culmination and the close of a cycle"};
+  var counts={};
+  chosen.forEach(function(x){ var n=x.card.num; if(n>=1&&n<=10){counts[n]=(counts[n]||0)+1;} });
+  Object.keys(counts).forEach(function(n){ if(counts[n]>=2){ notes.push("Repeated "+n+"s amplify a theme of "+numTheme[n]+"."); } });
+  var courts=chosen.filter(function(x){return x.card.num>=11;});
+  if(courts.length>=2){ notes.push("Several court cards suggest other people play a strong role in this situation."); }
+  var names=chosen.map(function(x){return x.card.name;});
+  function has(a,b){return names.indexOf(a)>-1&&names.indexOf(b)>-1;}
+  if(has("The Lovers","Two of Cups")) notes.push("The Lovers with the Two of Cups doubles down on a deep, harmonious union.");
+  if(has("The Tower","The Star")) notes.push("The Tower beside The Star reads as upheaval giving way to hope and healing.");
+  if(has("Death","The Sun")) notes.push("Death with The Sun speaks of an ending that opens into bright renewal.");
+  if(has("The Devil","The Tower")) notes.push("The Devil and The Tower together suggest breaking free of a confining situation, perhaps abruptly.");
+  if(has("Three of Swords","The Star")) notes.push("The Three of Swords softened by The Star points to heartbreak already beginning to heal.");
+  return notes;
+}
+
+var REFLECTIONS=[
+  "What in this reading matches something you already sensed?",
+  "Which card are you most resisting, and why might that be?",
+  "If the cards are right, what is the smallest next step they ask of you?",
+  "What would change if you trusted the message you least want to hear?",
+  "Where does this reading meet you, and where does it challenge you?"
+];
+
+function revealCardHtml(x){
+  var core=toneTransform(x.reversed?x.card.rev:x.card.up);
+  var dom=toneTransform(domainText(x.card));
+  var html='<div class="pos">'+x.label+'</div>'+
+    '<div class="cname">'+x.card.name+(x.reversed?' <span class="rev">Reversed</span>':'')+'</div>'+
+    '<div class="kw">'+x.card.kw+'</div>'+
+    '<p class="core">'+core+'</p>';
+  if(dom){ html+='<div class="focusline"><b>'+focusLabel()+'</b>'+dom+'</div>'; }
+  return html;
+}
+
+function collectIntuitive(){
+  var fell=[];
+  state.fell.forEach(function(r,i){ if(r.card){ fell.push({card:CARD_BY_NAME[r.card], reversed:r.reversed, label:ordinal(fell.length+1)+" to fall"}); } });
+  var theme=[];
+  state.theme.forEach(function(r){ if(r.card){ theme.push({card:CARD_BY_NAME[r.card], reversed:r.reversed, label:"Base"}); } });
+  return {fell:fell, theme:theme};
+}
+function collectStructured(){
+  var chosen=[];
+  for(var i=0;i<SPREADS[state.spread].positions.length;i++){
+    var p=state.picks[i];
+    if(!p||!p.card) return null;
+    var pos=SPREADS[state.spread].positions[i];
+    chosen.push({card:CARD_BY_NAME[p.card], reversed:p.reversed, label:pos.name+", "+pos.role});
+  }
+  return chosen;
+}
+
+function renderReading(){
+  var q=el("question").value.trim();
+  var out=el("result"); 
+  var note=el("reveal-note");
+  var forImage, forSave, mainCards, themeCards=[];
+
+  if(state.mode==="intuitive"){
+    var col=collectIntuitive();
+    if(col.fell.length===0){ note.textContent="Add at least one card that fell to reveal the reading."; return; }
+    mainCards=col.fell; themeCards=col.theme;
+  } else {
+    var chosen=collectStructured();
+    if(!chosen){ note.textContent="Choose a card for every position to reveal the reading."; return; }
+    mainCards=chosen;
+  }
+  note.textContent=""; out.innerHTML="";
+
+  var head=document.createElement("div"); head.className="reading-head";
+  var title = q ? '"'+q.replace(/</g,"&lt;")+'"' : (state.mode==="intuitive"?"An intuitive reading":SPREADS[state.spread].label);
+  var metaLine = (state.mode==="intuitive"?"Intuitive reading":SPREADS[state.spread].label)+" &nbsp;&middot;&nbsp; "+focusLabel()+" focus";
+  head.innerHTML='<div class="q">'+title+'</div><div class="meta">'+metaLine+'</div>';
+  out.appendChild(head);
+
+  if(state.mode==="intuitive"){
+    var lbl=document.createElement("div"); lbl.className="sectionlabel"; lbl.innerHTML='The cards that fell<span class="sub">'+mainCards.length+' card'+(mainCards.length>1?'s':'')+', in order</span>';
+    out.appendChild(lbl);
+  }
+  mainCards.forEach(function(x,idx){
+    var card=document.createElement("div"); card.className="revealcard"; card.style.animationDelay=(idx*0.07)+"s";
+    card.innerHTML=revealCardHtml(x); out.appendChild(card);
+  });
+
+  var notes=buildSynergy(mainCards);
+  if(notes.length){
+    var syn=document.createElement("div"); syn.className="synergy";
+    syn.innerHTML='<h3>How the cards speak together</h3><ul>'+notes.map(function(n){return "<li>"+n+"</li>";}).join("")+'</ul>';
+    out.appendChild(syn);
+  }
+
+  if(state.mode==="intuitive" && themeCards.length){
+    var tl=document.createElement("div"); tl.className="sectionlabel"; tl.innerHTML='The theme beneath<span class="sub">the cards at the base of the deck</span>';
+    out.appendChild(tl);
+    themeCards.forEach(function(x){
+      var t=document.createElement("div"); t.className="themecard";
+      var core=toneTransform(x.reversed?x.card.rev:x.card.up);
+      t.innerHTML='<div class="tn">'+x.card.name+(x.reversed?' <span class="rev">Reversed</span>':'')+'</div><div class="tcore">'+core+'</div>';
+      out.appendChild(t);
+    });
+    var tnotes=buildSynergy(themeCards);
+    var themeLine = tnotes.length ? tnotes[0] : "Together they set the quiet tone the rest of the reading unfolds against.";
+    var tsyn=document.createElement("div"); tsyn.className="synergy";
+    tsyn.innerHTML='<h3>The current beneath it all</h3><p style="margin:0;">'+themeLine+'</p>';
+    out.appendChild(tsyn);
+  }
+
+  var refl=document.createElement("div"); refl.className="reflect";
+  refl.textContent=toneTransform(REFLECTIONS[Math.floor(Math.random()*REFLECTIONS.length)]);
+  out.appendChild(refl);
+
+  var allForSave=mainCards.concat(themeCards.map(function(x){return {card:x.card,reversed:x.reversed,label:"Base"};}));
+  var row=document.createElement("div"); row.className="btnrow";
+  var saveBtn=document.createElement("button"); saveBtn.className="btn btn-ghost"; saveBtn.textContent="Save to journal";
+  saveBtn.onclick=function(){ saveReading(q,mainCards,themeCards); saveBtn.textContent="Saved \u2726"; saveBtn.disabled=true; };
+  var imgBtn=document.createElement("button"); imgBtn.className="btn btn-ghost"; imgBtn.textContent="Save as image";
+  imgBtn.onclick=function(){ exportImage(q,mainCards,themeCards); };
+  var shareBtn=document.createElement("button"); shareBtn.className="btn btn-ghost"; shareBtn.textContent="Share this reading";
+  shareBtn.onclick=function(){ shareReading(q,mainCards,themeCards,shareBtn); };
+  var newBtn=document.createElement("button"); newBtn.className="btn btn-ghost"; newBtn.textContent="New reading";
+  newBtn.onclick=function(){ out.innerHTML=""; el("question").value=""; window.scrollTo({top:0,behavior:"smooth"}); };
+  row.appendChild(saveBtn); row.appendChild(imgBtn); row.appendChild(shareBtn); row.appendChild(newBtn);
+  out.appendChild(row);
+  out.scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function cardIdx(c){ return CARDS.indexOf(c); }
+function shareReading(q,mainCards,themeCards,btn){
+  var payload={v:1,q:q,f:state.focus,m:state.mode,s:state.spread,
+    c:mainCards.map(function(x){return [cardIdx(x.card), x.reversed?1:0];}),
+    b:themeCards.map(function(x){return [cardIdx(x.card), x.reversed?1:0];})};
+  var enc=encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(payload)))));
+  var url=location.origin+location.pathname+"#r="+enc;
+  if(navigator.share){
+    navigator.share({title:"A reading from Revelio", url:url}).catch(function(){});
+  } else if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){ btn.textContent="Link copied \u2726"; });
+  } else {
+    prompt("Copy this link:", url);
+  }
+}
+function loadSharedReading(){
+  if(location.hash.indexOf("#r=")!==0) return false;
+  try{
+    var payload=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(3))))));
+    if(!payload||!payload.c||!payload.c.length) return false;
+    state.focus=payload.f||"general";
+    state.mode=payload.m||"intuitive";
+    state.spread=payload.s||"three";
+    state.tone="self";
+    var rows=payload.c.map(function(p){return {card:CARDS[p[0]].name, reversed:!!p[1]};});
+    if(state.mode==="intuitive"){
+      state.fell=rows;
+      state.theme=(payload.b||[]).map(function(p){return {card:CARDS[p[0]].name, reversed:!!p[1]};});
+      while(state.theme.length<4) state.theme.push({card:"",reversed:false});
+    } else {
+      state.picks=rows;
+    }
+    el("question").value=payload.q||"";
+    renderModeToggle(); toggleModePanels(); renderFocusChips(); renderToneChips();
+    renderFell(); renderTheme(); renderSpreadChips(); renderPositions();
+    renderReading();
+    return true;
+  } catch(e){ return false; }
+}
+function saveReading(q,mainCards,themeCards){
+  var readings=store.get("readings")||[];
+  readings.unshift({
+    id:Date.now(),
+    date:new Date().toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}),
+    mode:(state.mode==="intuitive"?"Intuitive reading":SPREADS[state.spread].label),
+    focus:focusLabel(),
+    question:q, note:"",
+    cards:mainCards.map(function(x){return {name:x.card.name, reversed:x.reversed};}),
+    theme:themeCards.map(function(x){return {name:x.card.name, reversed:x.reversed};})
+  });
+  store.set("readings",readings); renderJournal();
+}
+function renderPatterns(readings){
+  var box=el("journal-patterns"); if(!box) return; box.innerHTML="";
+  if(readings.length<3) return;
+  var recent=readings.slice(0,6);
+  var notes=[];
+  var counts={};
+  recent.forEach(function(r){
+    var seen={};
+    (r.cards||[]).concat(r.theme||[]).forEach(function(c){ seen[c.name]=true; });
+    Object.keys(seen).forEach(function(n){ counts[n]=(counts[n]||0)+1; });
+  });
+  Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];}).forEach(function(n){
+    if(counts[n]>=3 && notes.length<3){
+      notes.push(n+" has appeared in "+counts[n]+" of your last "+recent.length+" readings. It seems to be following you.");
+    }
+  });
+  var suits={wands:0,cups:0,swords:0,pentacles:0}, total=0;
+  recent.forEach(function(r){
+    (r.cards||[]).concat(r.theme||[]).forEach(function(c){
+      var card=CARD_BY_NAME[c.name];
+      if(card&&card.suit){ suits[card.suit]++; total++; }
+    });
+  });
+  Object.keys(suits).forEach(function(s){
+    if(total>=6 && suits[s]/total>=0.45){
+      var themeMap={wands:"passion, energy, and ambition",cups:"emotions, relationships, and intuition",swords:"thoughts, communication, and conflict",pentacles:"work, money, and the material world"};
+      notes.push("Your recent readings lean heavily toward "+suitName(s)+". Life seems centred on "+themeMap[s]+" lately.");
+    }
+  });
+  if(notes.length){
+    box.innerHTML='<div class="synergy" style="margin-bottom:16px;"><h3>Patterns across your readings</h3><ul>'+notes.map(function(n){return "<li>"+n+"</li>";}).join("")+'</ul></div>';
+  }
+}
+function renderJournal(){
+  var list=el("journal-list"); var all=store.get("readings")||[];
+  renderPatterns(all);
+  var qEl=el("journal-search");
+  var query=qEl?qEl.value.toLowerCase().trim():"";
+  var readings=!query?all:all.filter(function(r){
+    var hay=(r.question||"")+" "+(r.note||"")+" "+(r.mode||"")+" "+(r.focus||"")+" "+
+      (r.cards||[]).map(function(c){return c.name;}).join(" ")+" "+
+      (r.theme||[]).map(function(c){return c.name;}).join(" ");
+    return hay.toLowerCase().indexOf(query)>-1;
+  });
+  if(!all.length){ list.innerHTML='<div class="empty"><span class="moon">\u263E</span>No readings saved yet. Your journal fills as you save readings.</div>'; return; }
+  if(!readings.length){ list.innerHTML='<div class="empty">No readings match that search.</div>'; return; }
+  list.innerHTML="";
+  readings.forEach(function(r){
+    var e=document.createElement("div"); e.className="entry";
+    var cardsline=r.cards.map(function(c){return c.name+(c.reversed?" (rev)":"");}).join(" \u00B7 ");
+    var themeline=(r.theme&&r.theme.length)?('<br><span style="color:var(--gold);">Theme:</span> '+r.theme.map(function(c){return c.name+(c.reversed?" (rev)":"");}).join(" \u00B7 ")):"";
+    e.innerHTML='<div class="etop"><span class="eq">'+(r.question?'"'+r.question.replace(/</g,"&lt;")+'"':r.mode)+'</span><span class="edate">'+r.date+'</span></div>'+
+      '<div class="ecards">'+r.mode+' \u00B7 '+r.focus+' focus<br>'+cardsline+themeline+'</div>'+
+      (r.note?'<div class="enote">'+r.note.replace(/</g,"&lt;")+'</div>':'');
+    var actions=document.createElement("div"); actions.className="eactions";
+    var noteBtn=document.createElement("button"); noteBtn.className="link"; noteBtn.textContent=r.note?"Edit note":"Add note";
+    noteBtn.onclick=function(){ var n=prompt("Your note for this reading:", r.note||""); if(n!==null){ r.note=n; store.set("readings",all); renderJournal(); } };
+    var delBtn=document.createElement("button"); delBtn.className="link danger"; delBtn.textContent="Remove";
+    delBtn.onclick=function(){ if(confirm("Remove this reading from your journal?")){ store.set("readings", all.filter(function(x){return x.id!==r.id;})); renderJournal(); } };
+    actions.appendChild(noteBtn); actions.appendChild(delBtn); e.appendChild(actions); list.appendChild(e);
+  });
+}
+
+function exportImage(q,mainCards,themeCards){
+  var all=mainCards.map(function(x){return {name:x.card.name,reversed:x.reversed,base:false};})
+    .concat(themeCards.map(function(x){return {name:x.card.name,reversed:x.reversed,base:true};}));
+  var W=900, lineH=40, top=210, bottom=90, pad=60;
+  var H=top + all.length*lineH + bottom;
+  var cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+  var ctx=cv.getContext("2d");
+  var g=ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,"#F7F4FB"); g.addColorStop(0.5,"#FBF0F3"); g.addColorStop(1,"#EEF2FB");
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  ctx.textAlign="center";
+  ctx.fillStyle="#6E62A0"; ctx.font="600 46px Georgia, serif"; ctx.fillText("\u2726 revelio", W/2, 82);
+  ctx.fillStyle="#C7A66B"; ctx.font="700 15px Arial";
+  ctx.fillText(((state.mode==="intuitive"?"Intuitive reading":SPREADS[state.spread].label)+"  \u00B7  "+focusLabel()+" focus").toUpperCase(), W/2, 116);
+  ctx.fillStyle="#443C5C"; ctx.font="italic 26px Georgia, serif";
+  var qt=q?('"'+q+'"'):(state.mode==="intuitive"?"An intuitive reading":SPREADS[state.spread].label);
+  if(qt.length>60) qt=qt.slice(0,57)+"...";
+  ctx.fillText(qt, W/2, 162);
+  ctx.strokeStyle="rgba(199,166,107,0.5)"; ctx.beginPath(); ctx.moveTo(pad,188); ctx.lineTo(W-pad,188); ctx.stroke();
+  ctx.textAlign="left";
+  all.forEach(function(c,i){
+    var y=top + i*lineH;
+    if(c.base){ ctx.fillStyle="#C7A66B"; ctx.font="700 12px Arial"; ctx.fillText("BASE", pad, y); }
+    ctx.fillStyle="#443C5C"; ctx.font="500 23px Georgia, serif";
+    ctx.fillText(c.name+(c.reversed?"  (reversed)":""), pad+70, y+2);
+  });
+  ctx.textAlign="center"; ctx.fillStyle="#7A7291"; ctx.font="14px Arial";
+  ctx.fillText(new Date().toLocaleDateString(), W/2, H-40);
+  var link=document.createElement("a"); link.download="revelio-reading.png"; link.href=cv.toDataURL("image/png"); link.click();
+}
+
+var libFilter="all", libQuery="";
+function renderLibrary(){
+  var list=el("lib-list"); list.innerHTML="";
+  var items=CARDS.filter(function(c){
+    var fMatch = libFilter==="all" || (libFilter==="major"&&c.arcana==="major") || c.suit===libFilter;
+    var qMatch = !libQuery || c.name.toLowerCase().indexOf(libQuery)>-1 || c.kw.toLowerCase().indexOf(libQuery)>-1;
+    return fMatch && qMatch;
+  });
+  if(!items.length){ list.innerHTML='<div class="empty">No cards match that search.</div>'; return; }
+  items.forEach(function(c){
+    var d=document.createElement("details"); d.className="libcard";
+    d.innerHTML='<summary>'+c.name+'<span class="suit">'+suitName(c.suit)+'</span></summary>'+
+      '<div class="libbody">'+
+        '<div class="row"><b>Keywords</b>'+c.kw+'</div>'+
+        '<div class="row"><b>Upright</b>'+c.up+'</div>'+
+        '<div class="row"><b>Reversed</b>'+c.rev+'</div>'+
+        '<div class="row"><b>Love</b>'+c.love+'</div>'+
+        '<div class="row"><b>Career</b>'+c.career+'</div>'+
+        '<div class="row"><b>Finances</b>'+c.fin+'</div>'+
+      '</div>';
+    list.appendChild(d);
+  });
+}
+
+var quizCard=null, quizShown=false;
+function newQuiz(){ quizCard=CARDS[Math.floor(Math.random()*CARDS.length)]; quizShown=false; renderQuiz(); }
+function renderQuiz(){
+  var box=el("quizbox");
+  if(!quizShown){
+    box.innerHTML='<div class="quizprompt">Which card carries this meaning?</div><div class="quizq">'+quizCard.up+'</div><button class="btn btn-ghost" id="quiz-reveal">Reveal the card</button>';
+    el("quiz-reveal").onclick=function(){ quizShown=true; renderQuiz(); };
+  } else {
+    box.innerHTML='<div class="quizans"><div class="cn">'+quizCard.name+'</div><div style="color:var(--ink-soft);font-style:italic;margin-bottom:8px;">'+quizCard.kw+'</div><div><b style="color:var(--gold);font-size:11px;letter-spacing:.14em;text-transform:uppercase;">Reversed</b><br>'+quizCard.rev+'</div></div><button class="btn btn-ghost" id="quiz-next" style="margin-top:16px;">Next card</button>';
+    el("quiz-next").onclick=newQuiz;
+  }
+}
+
+function switchView(v){
+  ["reading","journal","library"].forEach(function(name){ el("view-"+name).hidden = (name!==v); });
+  document.querySelectorAll(".tab").forEach(function(t){ t.setAttribute("aria-selected", t.dataset.view===v?"true":"false"); });
+  if(v==="journal") renderJournal();
+  if(v==="library"){ renderLibrary(); if(!quizCard) newQuiz(); }
+}
+
+document.querySelectorAll(".tab").forEach(function(t){ t.onclick=function(){ switchView(t.dataset.view); }; });
+document.querySelectorAll(".libctrls .chip").forEach(function(c){
+  c.onclick=function(){ libFilter=c.dataset.filter; document.querySelectorAll(".libctrls .chip").forEach(function(x){x.setAttribute("aria-pressed", x===c?"true":"false");}); renderLibrary(); };
+});
+el("lib-search").oninput=function(e){ libQuery=e.target.value.toLowerCase().trim(); renderLibrary(); };
+el("add-fell").onclick=function(){ state.fell.push({card:"",reversed:false}); renderFell(); };
+el("reveal").onclick=renderReading;
+
+renderModeToggle();
+toggleModePanels();
+renderFocusChips();
+renderToneChips();
+renderFell();
+renderTheme();
+renderSpreadChips();
+renderPositions();
+var js=el("journal-search"); if(js){ js.oninput=renderJournal; }
+loadSharedReading();
+if("serviceWorker" in navigator && location.protocol==="https:"){
+  navigator.serviceWorker.register("sw.js").catch(function(){});
+}
+</script>
+</body>
+</html>
